@@ -1,0 +1,35 @@
+# Сгенерированные файлы Firebase. НИКОГДА НЕ ПУБЛИКУЙТЕ ИХ.
+lib/firebase_options.dart
+macos/Runner/GoogleService-Info.plist
+ios/Runner/GoogleService-Info.plist
+
+# Файлы IDE
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+
+# Сгенерированные Flutter файлы
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+/build/
+
+# Lock-файлы
+pubspec.lock
+macos/Podfile.lock
+ios/Podfile.lock
+
+# Прочее
+*.log
+
+# ИСПОЛНЕНО: Игнорируем директории с нативным кодом
+/ios/
+/android/
+/macos/
+/linux/
+/windows/
+/web/
