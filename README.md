@@ -35,7 +35,7 @@ This project intentionally excludes secret keys and platform-specific configurat
 
 1.  **Clone the Repository:**
     ```bash
-    git clone [Your-Repo-URL]
+    git clone https://github.com/alshfu/block_puzzle_pvp.git
     cd block_puzzle_pvp
     ```
 2.  **Configure Firebase:**
