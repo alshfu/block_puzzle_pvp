@@ -7,6 +7,7 @@ import 'game_logic/board.dart';
 import 'widgets/game_board_display.dart';
 import 'widgets/game_info_panel.dart';
 import 'widgets/game_controls.dart';
+import 'game_logic/piece.dart';
 
 class TetrisGameScreen extends StatefulWidget {
   const TetrisGameScreen({super.key});
@@ -127,7 +128,6 @@ class _TetrisGameScreenState extends State<TetrisGameScreen> {
     } else if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
       _performMove(() => _game.rotate());
     } else if (event.logicalKey == LogicalKeyboardKey.space) {
-      // ИСПРАВЛЕНИЕ: Добавлена обработка пробела для мгновенного сброса
       _performMove(() => _game.hardDrop());
     }
   }
@@ -148,7 +148,11 @@ class _TetrisGameScreenState extends State<TetrisGameScreen> {
                   children: [
                     Expanded(
                       flex: 3,
-                      child: GameBoardDisplay(game: _game),
+                      child: GameBoardDisplay(
+                        // ИСПРАВЛЕНИЕ: Передаем правильные параметры
+                        grid: _game.grid,
+                        currentPiece: _game.currentPiece,
+                      ),
                     ),
                     Expanded(
                       flex: 2,
@@ -169,7 +173,6 @@ class _TetrisGameScreenState extends State<TetrisGameScreen> {
                 onRight: () => _performMove(() => _game.moveRight()),
                 onRotate: () => _performMove(() => _game.rotate()),
                 onDown: () => _performMove(() => _game.moveDown()),
-                // ИСПРАВЛЕНИЕ: Подключена новая функция
                 onHardDrop: () => _performMove(() => _game.hardDrop()),
               ),
             ],

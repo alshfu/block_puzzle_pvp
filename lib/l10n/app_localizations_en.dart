@@ -52,7 +52,7 @@ class AppLocalizationsEn extends AppLocalizations {
   @override String get signInWithGoogle => 'Sign in with Google';
   @override String get signInWithApple => 'Sign in with Apple';
   @override String get continueAsGuest => 'Continue as Guest';
-  // ИСПРАВЛЕНИЕ: Добавлены недостающие строки
   @override String get loginSuccess => 'Login Successful!';
   @override String get loginCancelled => 'Login cancelled.';
+  @override String get profileSaved => 'Profile Saved!'; // Добавлено
 }

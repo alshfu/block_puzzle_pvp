@@ -11,13 +11,8 @@ import '../models/player_stats.dart';
 class FirebaseService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-
-  // ИСПРАВЛЕНИЕ: Ключ теперь загружается из безопасных переменных окружения.
-  // Это предотвращает утечку ключа в GitHub.
-  static const _webClientId = String.fromEnvironment('WEB_CLIENT_ID');
-
   final GoogleSignIn _googleSignIn = GoogleSignIn(
-    clientId: kIsWeb ? (_webClientId.isNotEmpty ? _webClientId : null) : null,
+    clientId: kIsWeb ? '963185798546-7i25dlltca81djva5mjk5k2cf2obhv8b.apps.googleusercontent.com' : null,
   );
 
   Stream<User?> get authStateChanges => _auth.authStateChanges();
@@ -33,13 +28,11 @@ class FirebaseService {
     try {
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
       if (googleUser == null) return null;
-
       final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
       final OAuthCredential credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
-
       final userCredential = await _auth.signInWithCredential(credential);
       await _checkAndCreateUserProfile(userCredential.user);
       return userCredential.user;
@@ -115,12 +108,10 @@ class FirebaseService {
       final snapshot = await transaction.get(docRef);
       if (!snapshot.exists) { return; }
       final currentStats = PlayerStats.fromMap(snapshot.data()! as Map<String, dynamic>);
-
       currentStats.gamesPlayed += 1;
       currentStats.totalPlaytimeSeconds += playtime.inSeconds;
       currentStats.totalXp += finalScore;
       currentStats.level = (currentStats.totalXp ~/ 1000) + 1;
-
       if (finalScore > currentStats.tetrisHighScore) {
         currentStats.tetrisHighScore = finalScore;
       }
@@ -128,19 +119,33 @@ class FirebaseService {
     });
   }
 
-  // ИСПРАВЛЕНИЕ: Переименовано с savePlayerProfile на savePlayerStats
-  Future<void> savePlayerStats(PlayerStats stats) async {
+  // ИСПРАВЛЕНИЕ: Добавлен недостающий метод
+  Future<void> updatePvpResult({required int totalScore, required bool victory}) async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+    final docRef = _firestore.collection('players').doc(user.uid);
+    return _firestore.runTransaction((transaction) async {
+      final snapshot = await transaction.get(docRef);
+      if (!snapshot.exists) return;
+      final currentStats = PlayerStats.fromMap(snapshot.data()! as Map<String, dynamic>);
+      currentStats.gamesPlayed += 1;
+      if (victory) {
+        currentStats.pvpWins += 1;
+        currentStats.totalXp += totalScore;
+        currentStats.level = (currentStats.totalXp ~/ 1000) + 1;
+      }
+      transaction.update(docRef, currentStats.toMap());
+    });
+  }
+
+  Future<void> savePlayerProfile(PlayerStats stats) async {
     final user = _auth.currentUser;
     if (user == null) return;
     await _firestore.collection('players').doc(user.uid).set(stats.toMap(), SetOptions(merge: true));
   }
 
   Future<List<PlayerStats>> getLeaderboard() async {
-    final snapshot = await _firestore
-        .collection('players')
-        .orderBy('tetrisHighScore', descending: true)
-        .limit(100)
-        .get();
+    final snapshot = await _firestore.collection('players').orderBy('tetrisHighScore', descending: true).limit(100).get();
     return snapshot.docs.map((doc) => PlayerStats.fromMap(doc.data())).toList();
   }
 }

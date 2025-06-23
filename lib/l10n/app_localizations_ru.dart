@@ -54,4 +54,5 @@ class AppLocalizationsRu extends AppLocalizations {
   @override String get continueAsGuest => 'Продолжить как гость';
   @override String get loginSuccess => 'Вход выполнен успешно!';
   @override String get loginCancelled => 'Вход отменен.';
+  @override String get profileSaved => 'Профиль сохранен!'; // Добавлено
 }

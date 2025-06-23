@@ -75,9 +75,9 @@ abstract class AppLocalizations {
   String get signInWithGoogle;
   String get signInWithApple;
   String get continueAsGuest;
-  // ИСПРАВЛЕНИЕ: Добавлены недостающие строки
   String get loginSuccess;
   String get loginCancelled;
+  String get profileSaved; // Добавлено
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

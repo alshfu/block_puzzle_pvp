@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:block_puzzle_pvp/services/firebase_service.dart';
+import 'package:block_puzzle_pvp/models/player_stats.dart';
+import 'package:block_puzzle_pvp/l10n/app_localizations.dart';
+import 'package:block_puzzle_pvp/screens/profile_screen.dart';
+import 'package:block_puzzle_pvp/screens/settings_screen.dart';
+import 'package:block_puzzle_pvp/screens/leaderboard_screen.dart';
 import '../games/tetris/tetris_game_screen.dart';
-import '../l10n/app_localizations.dart';
-import '../models/player_stats.dart';
-import '../services/firebase_service.dart';
-import 'profile_screen.dart';
-import 'settings_screen.dart';
-import 'leaderboard_screen.dart';
+import '../games/tetris/tetris_pvp_screen.dart';
 
 class GameSelectionScreen extends StatefulWidget {
   const GameSelectionScreen({super.key});
@@ -59,13 +59,11 @@ class _GameSelectionScreenState extends State<GameSelectionScreen> {
             tooltip: l10n.settings,
             onPressed: () => _navigateTo(const SettingsScreen()),
           ),
-          // ИСПРАВЛЕНИЕ: Добавлена кнопка выхода
           IconButton(
             icon: const Icon(Icons.logout),
             tooltip: l10n.logout,
             onPressed: () async {
               await _firebaseService.signOut();
-              // AuthGate сам перенаправит на экран входа
             },
           ),
           TextButton(
@@ -81,11 +79,23 @@ class _GameSelectionScreenState extends State<GameSelectionScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              _buildTetrisButton(
+              _buildGameButton(
                 l10n: l10n,
+                title: l10n.tetris,
+                subtitle: l10n.classicMode,
+                color: const Color(0xFF3498db),
+                highScore: _stats.tetrisHighScore,
                 onTap: () => _navigateTo(const TetrisGameScreen()),
               ),
               const SizedBox(height: 20),
+              _buildGameButton(
+                l10n: l10n,
+                title: "PvP",
+                subtitle: l10n.oneVsOne,
+                color: const Color(0xFFe74c3c),
+                highScore: _stats.pvpWins,
+                onTap: () => _navigateTo(const TetrisPvpScreen()),
+              ),
             ],
           ),
         ),
@@ -93,10 +103,17 @@ class _GameSelectionScreenState extends State<GameSelectionScreen> {
     );
   }
 
-  Widget _buildTetrisButton({required AppLocalizations l10n, required VoidCallback onTap}) {
+  Widget _buildGameButton({
+    required AppLocalizations l10n,
+    required String title,
+    required String subtitle,
+    required Color color,
+    required int highScore,
+    required VoidCallback onTap
+  }) {
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
-        backgroundColor: const Color(0xFF3498db),
+        backgroundColor: color,
         foregroundColor: Colors.white,
         padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
         shape: RoundedRectangleBorder(
@@ -106,9 +123,9 @@ class _GameSelectionScreenState extends State<GameSelectionScreen> {
       onPressed: onTap,
       child: Column(
         children: [
-          Text(l10n.tetris, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+          Text(title, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
           const SizedBox(height: 4),
-          Text(l10n.classicMode, style: const TextStyle(fontSize: 14, color: Colors.white70)),
+          Text(subtitle, style: const TextStyle(fontSize: 14, color: Colors.white70)),
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 12.0),
             child: Divider(color: Colors.white24),
@@ -116,28 +133,17 @@ class _GameSelectionScreenState extends State<GameSelectionScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildScoreColumn(
-                  title: l10n.highScore,
-                  score: '${_stats.tetrisHighScore}',
-                  color: Colors.amber),
+              Column(
+                children: [
+                  Text(l10n.highScore, style: TextStyle(fontSize: 12, color: Colors.white.withOpacity(0.8))),
+                  const SizedBox(height: 2),
+                  Text(highScore.toString(), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
+                ],
+              ),
             ],
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildScoreColumn({required String title, required String score, required Color color}) {
-    return Column(
-      children: [
-        Text(title, style: TextStyle(fontSize: 12, color: color.withOpacity(0.8))),
-        const SizedBox(height: 2),
-        Text(
-          score,
-          style: TextStyle(
-              fontSize: 20, fontWeight: FontWeight.bold, color: color),
-        ),
-      ],
     );
   }
 }

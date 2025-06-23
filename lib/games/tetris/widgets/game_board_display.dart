@@ -1,17 +1,26 @@
 import 'package:flutter/material.dart';
-import '../game_logic/board.dart';
+import '../game_logic/piece.dart';
 
 class GameBoardDisplay extends StatelessWidget {
-  final GameBoard game;
+  final List<List<Color?>> grid;
+  final Piece currentPiece;
 
-  const GameBoardDisplay({super.key, required this.game});
+  const GameBoardDisplay({
+    super.key,
+    required this.grid,
+    required this.currentPiece,
+  });
 
   @override
   Widget build(BuildContext context) {
+    // Определяем размеры доски из полученной сетки
+    final int rows = grid.length;
+    final int cols = grid.isNotEmpty ? grid[0].length : 0;
+
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: AspectRatio(
-        aspectRatio: GameBoard.cols / GameBoard.rows,
+        aspectRatio: cols / rows,
         child: Container(
           decoration: BoxDecoration(
             border: Border.all(color: Colors.grey.shade800, width: 2),
@@ -19,21 +28,21 @@ class GameBoardDisplay extends StatelessWidget {
           ),
           child: GridView.builder(
             physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: GameBoard.cols,
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: cols,
             ),
             itemBuilder: (context, index) {
-              int row = index ~/ GameBoard.cols;
-              int col = index % GameBoard.cols;
-              Color? color = game.grid[row][col];
+              int row = index ~/ cols;
+              int col = index % cols;
+              Color? color = grid[row][col];
 
-              // Отрисовка текущей фигуры
-              for (int y = 0; y < game.currentPiece.shape.length; y++) {
-                for (int x = 0; x < game.currentPiece.shape[y].length; x++) {
-                  if (game.currentPiece.shape[y][x] == 1) {
-                    if (game.currentPiece.position.y + y == row &&
-                        game.currentPiece.position.x + x == col) {
-                      color = game.currentPiece.color;
+              // Отрисовываем текущую падающую фигуру поверх сетки
+              for (int y = 0; y < currentPiece.shape.length; y++) {
+                for (int x = 0; x < currentPiece.shape[y].length; x++) {
+                  if (currentPiece.shape[y][x] == 1) {
+                    if (currentPiece.position.y + y == row &&
+                        currentPiece.position.x + x == col) {
+                      color = currentPiece.color;
                     }
                   }
                 }
@@ -47,7 +56,7 @@ class GameBoardDisplay extends StatelessWidget {
                 ),
               );
             },
-            itemCount: GameBoard.rows * GameBoard.cols,
+            itemCount: rows * cols,
           ),
         ),
       ),

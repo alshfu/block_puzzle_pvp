@@ -44,12 +44,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     setState(() => _isLoading = true);
     _stats!.playerName = newName;
-    await _firebaseService.savePlayerStats(_stats!);
+
+    // ИСПРАВЛЕНИЕ: Вызываем правильный метод `savePlayerProfile`
+    await _firebaseService.savePlayerProfile(_stats!);
+
     if (mounted) {
+      final l10n = AppLocalizations.of(context)!;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Профиль сохранен!')),
+        SnackBar(content: Text(l10n.profileSaved)),
       );
-      _loadProfile(); // Перезагружаем данные для обновления
+      _loadProfile();
     }
   }
 
@@ -61,6 +65,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     await _saveProfile();
   }
 
+  // ... (остальной код виджета без изменений)
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;

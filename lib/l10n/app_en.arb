@@ -47,5 +47,7 @@
   "welcome": "Welcome!",
   "signInWithGoogle": "Sign in with Google",
   "signInWithApple": "Sign in with Apple",
-  "continueAsGuest": "Continue as Guest"
+  "continueAsGuest": "Continue as Guest",
+  "loginSuccess": "Login Successful!",
+  "loginCancelled": "Login cancelled."
 }
