@@ -1,140 +1,92 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'board.dart';
 import 'piece.dart';
 
-// Перечисление для отслеживания, чей сейчас ход
 enum PlayerType { human, bot }
 
-class PvpGameBoard {
-  static const int rows = 20;
-  static const int cols = 10;
+class SharedBoardPvpGame {
+  // The single, shared board for both players
+  late GameBoard board;
+  PlayerType currentPlayer = PlayerType.human;
 
-  late List<List<Color?>> grid;
-  late Piece currentPiece;
-
+  // Separate "7-bags" for each player
   final List<Tetromino> _humanBag = [];
   final List<Tetromino> _botBag = [];
+  final Random _random = Random();
+
   late Piece humanNextPiece;
   late Piece botNextPiece;
 
-  PlayerType currentPlayer = PlayerType.human;
-  int score = 0;
-  bool _isGameOver = false;
-  final Random _random = Random();
+  SharedBoardPvpGame() {
+    board = GameBoard();
+    // Subscribe to the piece placed event to switch turns
+    board.onPiecePlaced = switchTurn;
+    // Garbage lines are not used in this mode
+    board.onLinesCleared = null;
 
-  PvpGameBoard() {
-    grid = List.generate(rows, (_) => List.generate(cols, (_) => null));
-    _fillBagFor(PlayerType.human);
-    _fillBagFor(PlayerType.bot);
-    humanNextPiece = _getPieceFromBag(PlayerType.human);
-    botNextPiece = _getPieceFromBag(PlayerType.bot);
-    _spawnNewPiece();
+    _fillBag(_humanBag);
+    _fillBag(_botBag);
+
+    humanNextPiece = _createNewPiece(PlayerType.human);
+    botNextPiece = _createNewPiece(PlayerType.bot);
+
+    _spawnNewPieceForCurrentPlayer();
   }
 
-  void _fillBagFor(PlayerType player) {
-    final bag = player == PlayerType.human ? _humanBag : _botBag;
+  void _fillBag(List<Tetromino> bag) {
     bag.clear();
     bag.addAll(Tetromino.values);
     bag.shuffle(_random);
   }
 
-  Piece _getPieceFromBag(PlayerType player) {
-    final bag = player == PlayerType.human ? _humanBag : _botBag;
-    if (bag.isEmpty) _fillBagFor(player);
-    return Piece(type: bag.removeAt(0));
+  Piece _createNewPiece(PlayerType player) {
+    final bag = (player == PlayerType.human) ? _humanBag : _botBag;
+    if (bag.isEmpty) {
+      _fillBag(bag);
+    }
+    final type = bag.removeAt(0);
+    return Piece(type: type);
   }
 
-  void _spawnNewPiece() {
-    if (_isGameOver) return;
+  void _spawnNewPieceForCurrentPlayer() {
+    if (board.isGameOver()) return;
 
-    currentPiece = (currentPlayer == PlayerType.human) ? humanNextPiece : botNextPiece;
-    currentPiece.position = Point((cols / 2).floor() - 1, 0);
-
+    // Take a piece from the current player's queue
     if (currentPlayer == PlayerType.human) {
-      humanNextPiece = _getPieceFromBag(PlayerType.human);
+      board.currentPiece = humanNextPiece;
+      humanNextPiece = _createNewPiece(PlayerType.human);
     } else {
-      botNextPiece = _getPieceFromBag(PlayerType.bot);
+      board.currentPiece = botNextPiece;
+      botNextPiece = _createNewPiece(PlayerType.bot);
     }
 
-    if (!isValidPosition(currentPiece.position)) {
-      _isGameOver = true;
+    // Place it at the starting position
+    board.currentPiece.position = Point((GameBoard.cols / 2).floor() - 1, 0);
+
+    // If there's no room for the new piece, the game is over
+    if (!board.isValidPosition(board.currentPiece.position)) {
+      board.setGameOver(true);
     }
   }
 
-  void _switchTurn() {
+  void switchTurn() {
+    if (board.isGameOver()) return;
+
     currentPlayer = (currentPlayer == PlayerType.human) ? PlayerType.bot : PlayerType.human;
-    _spawnNewPiece();
+    _spawnNewPieceForCurrentPlayer();
   }
 
-  void moveDown() => _tryMove(const Point(0, 1));
-  void moveLeft() => _tryMove(const Point(-1, 0));
-  void moveRight() => _tryMove(const Point(1, 0));
+  // Delegate piece control methods to the board
+  void moveLeft() => board.moveLeft();
+  void moveRight() => board.moveRight();
+  void moveDown() => board.moveDown();
+  void rotate() => board.rotate();
+  void hardDrop() => board.hardDrop();
 
-  void rotate() {
-    final originalShape = currentPiece.shape.map((row) => List<int>.from(row)).toList();
-    currentPiece.rotate();
-    if (!isValidPosition(currentPiece.position)) currentPiece.shape = originalShape;
-  }
-
-  void hardDrop() {
-    while (isValidPosition(Point(currentPiece.position.x, currentPiece.position.y + 1))) {
-      currentPiece.move(const Point(0, 1));
-    }
-    _placePiece();
-  }
-
-  void _tryMove(Point<int> direction) {
-    Point<int> newPosition = Point(currentPiece.position.x + direction.x, currentPiece.position.y + direction.y);
-    if (isValidPosition(newPosition)) {
-      currentPiece.position = newPosition;
-    } else if (direction.y == 1) {
-      _placePiece();
-    }
-  }
-
-  bool isValidPosition(Point<int> pos, {List<List<int>>? shape}) {
-    List<List<int>> s = shape ?? currentPiece.shape;
-    for (int y = 0; y < s.length; y++) {
-      for (int x = 0; x < s[y].length; x++) {
-        if (s[y][x] == 1) {
-          int newX = pos.x + x;
-          int newY = pos.y + y;
-          if (newX < 0 || newX >= cols || newY >= rows || (newY >= 0 && grid[newY][newX] != null)) {
-            return false;
-          }
-        }
-      }
-    }
-    return true;
-  }
-
-  void _placePiece() {
-    for (int y = 0; y < currentPiece.shape.length; y++) {
-      for (int x = 0; x < currentPiece.shape[y].length; x++) {
-        if (currentPiece.shape[y][x] == 1) {
-          int boardY = currentPiece.position.y + y;
-          if (boardY >= 0 && boardY < rows) {
-            grid[boardY][currentPiece.position.x + x] = currentPiece.color;
-          }
-        }
-      }
-    }
-    _clearLines();
-    _switchTurn();
-  }
-
-  void _clearLines() {
-    int lines = 0;
-    for (int y = rows - 1; y >= 0; y--) {
-      if (!grid[y].contains(null)) {
-        lines++;
-        for (int r = y; r > 0; r--) grid[r] = List.from(grid[r - 1]);
-        grid[0] = List.generate(cols, (_) => null);
-        y++;
-      }
-    }
-    if (lines > 0) score += [100, 300, 500, 800][lines - 1];
-  }
-
-  bool isGameOver() => _isGameOver;
+  // Methods to get game state
+  bool isGameOver() => board.isGameOver();
+  int get score => board.score;
+  List<List<Color?>> get grid => board.grid;
+  Piece get currentPiece => board.currentPiece;
 }

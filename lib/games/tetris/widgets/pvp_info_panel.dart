@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../game_logic/piece.dart';
-import '../game_logic/pvp_board.dart';
+import '../game_logic/pvp_board.dart'; // Using pvp_board for PlayerType
 
 class PvpInfoPanel extends StatelessWidget {
   final int score;
@@ -19,61 +19,93 @@ class PvpInfoPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(8.0),
-      color: Colors.grey.shade900,
+      padding: const EdgeInsets.all(16.0),
+      color: Colors.black.withOpacity(0.2),
       child: Column(
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text('СЧЕТ: $score', style: const TextStyle(color: Colors.white, fontSize: 20)),
-          const SizedBox(height: 10),
-          Text(
-            currentPlayer == PlayerType.human ? 'ВАШ ХОД' : 'ХОД БОТА',
-            style: TextStyle(
-              color: currentPlayer == PlayerType.human ? Colors.greenAccent : Colors.redAccent,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
+          _buildInfoBox('СЧЕТ', score.toString()),
+          const SizedBox(height: 20),
+          _buildTurnIndicator(),
+          const SizedBox(height: 20),
+          _buildNextPieceBox('СЛЕДУЮЩАЯ (ВЫ)', humanNextPiece),
+          const SizedBox(height: 16),
+          _buildNextPieceBox('СЛЕДУЮЩАЯ (БОТ)', botNextPiece),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTurnIndicator() {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade800,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Center(
+        child: Text(
+          currentPlayer == PlayerType.human ? 'ВАШ ХОД' : 'ХОД БОТА',
+          style: TextStyle(
+            color: currentPlayer == PlayerType.human ? Colors.greenAccent : Colors.redAccent,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 1.5,
           ),
-          const SizedBox(height: 10),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildNextPieceBox('ВЫ', humanNextPiece),
-              _buildNextPieceBox('БОТ', botNextPiece),
-            ],
-          )
+        ),
+      ),
+    );
+  }
+
+  // FIXED: This method now accepts an optional child widget
+  Widget _buildInfoBox(String label, String value, {Widget? child}) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade900,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: TextStyle(color: Colors.grey.shade400, fontSize: 12)),
+          const SizedBox(height: 4),
+          // Display the child if it exists, otherwise display the text value
+          child ?? Text(value, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white)),
         ],
       ),
     );
   }
 
   Widget _buildNextPieceBox(String label, Piece piece) {
-    return Column(
-      children: [
-        Text(label, style: const TextStyle(color: Colors.white70)),
-        const SizedBox(height: 4),
-        Container(
+    // This call is now valid because _buildInfoBox accepts a child
+    return _buildInfoBox(
+      label,
+      '',
+      child: Center(
+        child: SizedBox(
           height: 60,
           width: 60,
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey.shade700),
-            borderRadius: BorderRadius.circular(4),
-          ),
           child: _buildNextPiece(piece),
         ),
-      ],
+      ),
     );
   }
 
   Widget _buildNextPiece(Piece piece) {
+    final int pieceWidth = piece.shape.isNotEmpty ? piece.shape[0].length : 4;
+    final int pieceHeight = piece.shape.length;
+
     return GridView.builder(
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 4,
+        crossAxisCount: pieceWidth,
       ),
-      itemCount: 16,
+      itemCount: pieceWidth * pieceHeight,
       itemBuilder: (context, index) {
-        int row = index ~/ 4;
-        int col = index % 4;
+        int row = index ~/ pieceWidth;
+        int col = index % pieceWidth;
 
         if (row < piece.shape.length && col < piece.shape[row].length && piece.shape[row][col] == 1) {
           return Container(

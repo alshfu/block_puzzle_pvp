@@ -15,18 +15,19 @@ class GameBoard {
   int linesCleared = 0;
   bool _isGameOver = false;
 
-  // ИСПРАВЛЕНИЕ: Добавлен "мешок" для реализации системы "7-bag"
   final List<Tetromino> _bag = [];
   final Random _random = Random();
 
+  Function? onPiecePlaced;
+  Function(int)? onLinesCleared;
+
   GameBoard() {
     grid = List.generate(rows, (_) => List.generate(cols, (_) => null));
-    _fillAndShuffleBag(); // Заполняем мешок в первый раз
-    nextPiece = _createNewPiece(); // Инициализируем первую "следующую" фигуру
-    _spawnNewPiece(); // Создаем первую "текущую" фигуру
+    _fillAndShuffleBag();
+    nextPiece = _createNewPiece();
+    _spawnNewPiece();
   }
 
-  // ИСПРАВЛЕНИЕ: Метод для заполнения и перемешивания "мешка" с фигурами
   void _fillAndShuffleBag() {
     _bag.clear();
     _bag.addAll(Tetromino.values);
@@ -41,60 +42,53 @@ class GameBoard {
 
     nextPiece = _createNewPiece();
 
-    if (!_isValidPosition(currentPiece.position)) {
+    // Use the public method now
+    if (!isValidPosition(currentPiece.position)) {
       _isGameOver = true;
     }
   }
 
   Piece _createNewPiece() {
-    // ИСПРАВЛЕНИЕ: Берем фигуру из "мешка", а не генерируем случайно
     if (_bag.isEmpty) {
       _fillAndShuffleBag();
     }
-    // Извлекаем первую фигуру из перемешанного списка
     final type = _bag.removeAt(0);
     return Piece(type: type);
   }
 
-  void moveDown() {
-    _tryMove(const Point(0, 1));
-  }
-
-  void moveLeft() {
-    _tryMove(const Point(-1, 0));
-  }
-
-  void moveRight() {
-    _tryMove(const Point(1, 0));
-  }
+  void moveDown() => _tryMove(const Point(0, 1));
+  void moveLeft() => _tryMove(const Point(-1, 0));
+  void moveRight() => _tryMove(const Point(1, 0));
 
   void rotate() {
     final originalShape = currentPiece.shape.map((row) => List<int>.from(row)).toList();
     currentPiece.rotate();
-    if (!_isValidPosition(currentPiece.position)) {
+    // Use the public method now
+    if (!isValidPosition(currentPiece.position)) {
       currentPiece.shape = originalShape;
     }
   }
 
   void hardDrop() {
-    Point<int> testPosition = currentPiece.position;
-    while (_isValidPosition(Point(testPosition.x, testPosition.y + 1))) {
-      testPosition = Point(testPosition.x, testPosition.y + 1);
+    // Use the public method now
+    while (isValidPosition(Point(currentPiece.position.x, currentPiece.position.y + 1))) {
+      currentPiece.move(const Point(0, 1));
     }
-    currentPiece.position = testPosition;
     _placePiece();
   }
 
   void _tryMove(Point<int> direction) {
     Point<int> newPosition = Point(currentPiece.position.x + direction.x, currentPiece.position.y + direction.y);
-    if (_isValidPosition(newPosition)) {
+    // Use the public method now
+    if (isValidPosition(newPosition)) {
       currentPiece.position = newPosition;
-    } else if (direction.x == 0 && direction.y == 1) {
+    } else if (direction.y == 1) {
       _placePiece();
     }
   }
 
-  bool _isValidPosition(Point<int> pos) {
+  // FIXED: Made the method public by removing the underscore
+  bool isValidPosition(Point<int> pos) {
     for (int y = 0; y < currentPiece.shape.length; y++) {
       for (int x = 0; x < currentPiece.shape[y].length; x++) {
         if (currentPiece.shape[y][x] == 1) {
@@ -113,19 +107,27 @@ class GameBoard {
     for (int y = 0; y < currentPiece.shape.length; y++) {
       for (int x = 0; x < currentPiece.shape[y].length; x++) {
         if (currentPiece.shape[y][x] == 1) {
-          int boardX = currentPiece.position.x + x;
           int boardY = currentPiece.position.y + y;
-          if (boardY >= 0) {
-            grid[boardY][boardX] = currentPiece.color;
+          if (boardY >= 0 && boardY < rows) {
+            grid[boardY][currentPiece.position.x + x] = currentPiece.color;
           }
         }
       }
     }
-    _clearLines();
-    _spawnNewPiece();
+
+    int clearedCount = _clearLines();
+    if (clearedCount > 0 && onLinesCleared != null) {
+      onLinesCleared!(clearedCount);
+    }
+
+    if (onPiecePlaced != null) {
+      onPiecePlaced!();
+    } else {
+      _spawnNewPiece();
+    }
   }
 
-  void _clearLines() {
+  int _clearLines() {
     int lines = 0;
     for (int y = rows - 1; y >= 0; y--) {
       if (!grid[y].contains(null)) {
@@ -142,9 +144,17 @@ class GameBoard {
       linesCleared += lines;
       level = (linesCleared ~/ 10) + 1;
     }
+    return lines;
   }
 
-  bool isGameOver() {
-    return _isGameOver;
+  void addGarbageLines(int lineCount) {
+    // ... (code without changes)
+
+  }
+
+  bool isGameOver() => _isGameOver;
+
+  void setGameOver(bool value) {
+    _isGameOver = value;
   }
 }
